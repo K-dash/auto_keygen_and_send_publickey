@@ -1,0 +1,4 @@
+Host <key-name>
+    Hostname <remote_host_ipaddress>
+    User <user_name>
+    IdentityFile ~/.ssh/<key_name>

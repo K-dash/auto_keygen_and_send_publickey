@@ -1,0 +1,12 @@
+# conf.d配下にあるリモートホストの設定情報をIncludeする
+# 本Includeディレクティブが記述されていない場合、auto_keygen_and_send_publickey.sh実行時に追記される
+Include ~/.ssh/conf.d/*
+
+#------- connection settings ------
+ServerAliveInterval 60
+ServerAliveCountMax 3
+ConnectionAttempts 3
+
+#------- Log setting -------
+# LogLevel VERBOSE
+# LogLevel DEBUG

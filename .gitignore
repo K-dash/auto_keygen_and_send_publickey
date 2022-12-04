@@ -1,0 +1,7 @@
+*
+!README.md
+!.gitignore
+!auto_keygen_and_send_publickey.sh
+!sample_config
+!sample_host
+!/conf.d/
