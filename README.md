@@ -37,7 +37,7 @@ This tool, auto_keygen_and_put_publickey.sh, automates the process of generating
 - Public Key Transfer
   - Utilizes ssh-copy-id to securely transfer the public key to the specified remote server.
 - Configuration Management:
-  - Automatically creates and manages SSH configuration for easy access by appending an Include directive to ^ - - `~/.ssh/config` and creating specific host configurations in `~/.ssh/conf.d/`.
+  - Automatically creates and manages SSH configuration for easy access by appending an Include directive to `~/.ssh/config` and creating specific host configurations in `~/.ssh/conf.d/`.
 
 ## Error Handling
 - Validates required arguments and displays usage instructions if any are missing or incorrect.
