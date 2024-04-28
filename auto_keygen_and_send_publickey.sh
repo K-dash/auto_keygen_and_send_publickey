@@ -1,7 +1,7 @@
 #!/bin/bash
 set -eu
 
-# 引数が異常な場合、利用方法を表示して処理を終了する
+# If the arguments are incorrect, display usage instructions and exit
 arg_error() {
     echo "[ERROR]  usage: ./auto_keygen_and_put_publickey.sh [-h remote_host_ipaddress] [-u user_name] [-k key_name]"
     echo "[ERROR]  required arg --->  '-h', '-u'"
@@ -9,7 +9,7 @@ arg_error() {
     exit 1
 }
 
-# 同じ名前のkeyがすでに存在する場合のエラーメッセージ
+# Error message if a key with the same name already exists
 key_name_error() {
     echo "[ERROR]  A key with the same name ($ARG_KEY_NAME) already exists in ~/.ssh/"
     echo "[ERROR]  Please specify a different key name for the '-k' arg."
@@ -18,18 +18,17 @@ key_name_error() {
 
 SSH_DIR=~/.ssh
 SSH_CONF_DIR=~/.ssh/conf.d
-# コマンド引数を格納する変数を定義
 ARG_USER_NAME=
 ARG_REMOTE_HOST=
 ARG_KEY_NAME=id_rsa_by_auto_keygen
 
-# ---------------- コマンド引数の判定＆格納 ----------------
-# 引数が空の場合はエラー
+# ---------------- Determine and store command arguments ----------------
+# Error if no arguments are provided
 if [ $# = 0 ]; then
     arg_error
 fi
 
-# getoptsを使用して指定された引数の値を変数に格納
+# Use getopts to store the specified argument values in variables
 while getopts "h:u:k:" opt; do
     case $opt in
     h)  # required
@@ -42,18 +41,18 @@ while getopts "h:u:k:" opt; do
         ARG_KEY_NAME=$OPTARG
         ;;
     *)
-        # 指定された引数が定義されたものではない場合、エラーメッセージを表示
+        # If an undefined argument is specified, display an error message
         arg_error
         ;;
     esac
 done
 
-# 必須の値が空の場合、エラー
+# Error if required values are missing
 if [ -z "$ARG_REMOTE_HOST" ] || [ -z "$ARG_USER_NAME" ]; then
     arg_error
 fi
 
-# すでに同じ名前のkeyがある場合、上書きではなくエラー扱いとする(後続のconfigファイルを作るので)
+# Treat it as an error, not an overwrite, if a key with the same name already exists (because the subsequent config file is created)
 if [ -e "$SSH_DIR/$ARG_KEY_NAME" ]; then
     key_name_error
 fi
@@ -61,47 +60,45 @@ fi
 echo "[INFO] Start processing."
 
 
-# ---------------- ディレクトリ作成 ----------------
-# ~/.sshディレクトリ存在確認
+# ---------------- Create directories ----------------
+# Check if ~/.ssh directory exists
 if [ ! -d "$SSH_DIR" ]; then
-    # なければ作る
     mkdir -m 700 "$SSH_DIR"
     echo "[INFO] Created $SSH_DIR directory."
 fi
 
-# ~/.ssh/conf.d/ディレクトリ存在確認
+# Check if ~/.ssh/conf.d/ directory exists
 if [ ! -d "$SSH_CONF_DIR" ]; then
-    # なければ作る
     mkdir -m 700 "$SSH_CONF_DIR"
     echo "[INFO] Created $SSH_CONF_DIR directory."
 fi
 
-# ---------------- .ssh/configにincludeディレティブを追記 ----------------
-# .ssh/conf.d配下のconfigの内容を読み込めるようにするため、.ssh/configにIncludeを追記
-
+# ---------------- Append Include directive to .ssh/config ----------------
+# To read the content of config files under .ssh/conf.d/, add Include to .ssh/config
 INCLUDE_DIRECTIVE="Include ~/.ssh/conf.d/*"
 
-# すでにIncludeの記述があればスキップ
+# Skip if Include directive already exists
 if ! grep ^"$INCLUDE_DIRECTIVE" "$SSH_DIR"/config; then
-    # sedコマンドで追加する方法もあるが、GNUと非GNU（macOS等）ではsedのオプションの挙動が異なるため、printfを採用
+    # Although sed command could be used to add, GNU and non-GNU (e.g., macOS) sed options behave differently,
+    # so printf is used
     printf '%s\n' 0a "$INCLUDE_DIRECTIVE" . x | ex "$SSH_DIR"/config
 fi
 
-# ---------------- key-pair作成 ----------------
+# ---------------- Generate key-pair ----------------
 echo "[INFO] Created key name: $ARG_KEY_NAME"
 ssh-keygen -N "" -f ~/.ssh/"$ARG_KEY_NAME"
 
 echo "[INFO] Key generation is complete."
 
-# ---------------- リモートサーバに公開鍵を転送 ----------------
+# ---------------- Transfer public key to remote server ----------------
 echo "[INFO] Start ssh-copy-id."
 ssh-copy-id -i ~/.ssh/"$ARG_KEY_NAME".pub "$ARG_USER_NAME"@"$ARG_REMOTE_HOST"
 
-# リモートサーバにssh接続できる場合、ARG_USER_NAMEのパスワードの入力が求められる
+# If ssh connection to the remote server is possible, it will prompt for ARG_USER_NAME's password
 
-# ---------------- configファイルの作成 ----------------
-# ‘ssh <リモートサーバ名>‘ だけでsshできるように設定ファイルを作る（作成したkeyと同じ名前で作成する）
-#  configファイルは ‘~/.ssh/conf.d‘ 配下に作成する
+# ---------------- Create config file ----------------
+# Create a config file to allow ssh with just 'ssh <remote server name>' (create using the same name as the created key)
+# Create the config file in '~/.ssh/conf.d'
 echo "[INFO] Start creating config file."
 
 cat <<EOF >~/.ssh/conf.d/"$ARG_KEY_NAME"
